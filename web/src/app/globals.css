@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Soft, warm theme suitable for daycare (vibrant yet clean) */
+    --background: 40 33% 98%; /* Light cream/warm white */
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    /* Primary: soft orange / peach */
+    --primary: 24 90% 58%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary: very light soft orange */
+    --secondary: 32 80% 92%;
+    --secondary-foreground: 24 90% 40%;
+    
+    /* Accent: cheerful yellow */
+    --accent: 48 96% 53%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    
+    --border: 214.3 31.8% 91.4%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    /* Sleek dark mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --primary: 24 90% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --accent: 48 96% 53%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    
+    --border: 217.2 32.6% 17.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Glassmorphism helpers */
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-sm dark:bg-black/50 dark:border-white/10;
+  }
+}
