@@ -81,7 +81,7 @@ export default async function DashboardPage({
             </h1>
             <p className="flex items-center text-muted-foreground text-sm font-medium">
               <CalendarDays className="w-4 h-4 mr-2" />
-              {displayDateStr} の来所予定
+              {displayDateStr}
             </p>
           </div>
 
