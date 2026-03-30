@@ -165,8 +165,10 @@ export default async function AdminDashboardPage({
                         name="date" 
                         defaultValue={targetDateStr}
                         className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                        onChange={(e) => e.target.form?.submit()}
                       />
+                      <button type="submit" className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors">
+                        表示
+                      </button>
                     </form>
                   </div>
 
