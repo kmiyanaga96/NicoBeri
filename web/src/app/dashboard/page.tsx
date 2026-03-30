@@ -11,7 +11,13 @@ function formatTime(isoString: string | null) {
   return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const resolvedParams = await searchParams
+  const isTomorrow = resolvedParams?.day === 'tomorrow'
   const supabase = await createClient()
 
   // セッションの確認
@@ -34,8 +40,11 @@ export default async function DashboardPage() {
 
   const isAdmin = staffProfile?.role === 'admin'
 
-  // 今日の日付文字列（YYYY-MM-DD）を取得
-  const todayStr = new Date().toISOString().split('T')[0]
+  // 対象の日付文字列（YYYY-MM-DD）を算出
+  const targetDate = new Date()
+  if (isTomorrow) targetDate.setDate(targetDate.getDate() + 1)
+  const targetDateStr = targetDate.toISOString().split('T')[0]
+  const displayDateStr = targetDate.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
 
   // Supabaseから本日のスケジュールと児童詳細情報をJOINして取得
   const { data: schedules, error } = await supabase
@@ -52,7 +61,7 @@ export default async function DashboardPage() {
         medical_notes
       )
     `)
-    .eq('date', todayStr)
+    .eq('date', targetDateStr)
     .order('created_at', { ascending: true })
 
   // 型安全と存在チェックのためのキャスト
@@ -72,7 +81,7 @@ export default async function DashboardPage() {
             </h1>
             <p className="flex items-center text-muted-foreground text-sm font-medium">
               <CalendarDays className="w-4 h-4 mr-2" />
-              {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })} の来所予定
+              {displayDateStr} の来所予定
             </p>
           </div>
 
@@ -104,12 +113,28 @@ export default async function DashboardPage() {
           </div>
         )}
 
+        {/* Date Tabs (今日 / 明日) */}
+        <div className="flex bg-black/5 dark:bg-white/5 p-1.5 rounded-2xl w-fit mb-6 shadow-inner border border-black/5 dark:border-white/5">
+          <Link
+            href="/dashboard"
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${!isTomorrow ? 'bg-primary text-primary-foreground shadow-sm scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'}`}
+          >
+            今日
+          </Link>
+          <Link
+            href="/dashboard?day=tomorrow"
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${isTomorrow ? 'bg-primary text-primary-foreground shadow-sm scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'}`}
+          >
+            明日
+          </Link>
+        </div>
+
         {/* Schedule List */}
         <div className="space-y-4 pb-12">
           {typedSchedules.length === 0 && !error ? (
             <div className="glass p-12 rounded-3xl text-center flex flex-col items-center justify-center text-muted-foreground border-dashed border-2 border-border/50">
               <CalendarDays className="w-12 h-12 mb-4 opacity-50" />
-              <p>本日の来所予定は登録されていません。</p>
+              <p>来所予定は登録されていません。</p>
             </div>
           ) : (
             typedSchedules.map((schedule) => {
