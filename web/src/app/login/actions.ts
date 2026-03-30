@@ -7,12 +7,15 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(prevState: any, formData: FormData) {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
+  const staffId = formData.get('staff_id') as string
   const password = formData.get('password') as string
 
-  if (!email || !password) {
+  if (!staffId || !password) {
     return { error: 'スタッフIDとパスワードを入力してください' }
   }
+
+  // IDからダミーメールを生成して認証する
+  const email = `${staffId}@nicoberi.com`
 
   const { error } = await supabase.auth.signInWithPassword({
     email,

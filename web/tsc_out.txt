@@ -1,0 +1,3 @@
+.next/dev/types/routes.d.ts(58,37): error TS1005: ';' expected.
+.next/dev/types/routes.d.ts(59,3): error TS1128: Declaration or statement expected.
+.next/dev/types/routes.d.ts(60,1): error TS1128: Declaration or statement expected.

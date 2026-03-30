@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "NicoBeri - 児童託児所システム",
-  description: "障害児日中一時預かり所のスケジュール・打刻・管理システム",
+  title: "NicoBeri基幹システム",
+  description: "スケジュール・打刻・管理用アプリ",
 };
 
 export default function RootLayout({

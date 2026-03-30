@@ -56,3 +56,44 @@ export async function markAsDeparted(scheduleId: string) {
 
   revalidatePath('/dashboard')
 }
+
+// 送迎フラグのトグル
+export async function toggleTransport(scheduleId: string, field: 'pickup' | 'dropoff', currentValue: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { error } = await supabase
+    .from('daily_schedules')
+    .update({ [field]: !currentValue })
+    .eq('id', scheduleId)
+
+  if (error) {
+    console.error(`Error toggling ${field}:`, error)
+    return
+  }
+  revalidatePath('/dashboard')
+}
+
+// 児童の備考欄の更新
+export async function updateChildNotes(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const childId = formData.get('childId') as string
+  const notes = formData.get('notes') as string
+
+  if (!childId) return
+
+  const { error } = await supabase
+    .from('children')
+    .update({ notes })
+    .eq('id', childId)
+
+  if (error) {
+    console.error('Error updating notes:', error)
+    return
+  }
+  revalidatePath('/dashboard')
+}

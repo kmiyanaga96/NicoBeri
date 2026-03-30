@@ -20,7 +20,7 @@ export default function Home() {
             <span className="text-white text-2xl font-bold">N</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">NicoBeri</h1>
-          <p className="text-muted-foreground text-sm mt-1">児童託児所システムへようこそ</p>
+          <p className="text-muted-foreground text-sm mt-1">ニコベリ基幹システム</p>
         </div>
 
         {/* Login Form */}
@@ -32,24 +32,24 @@ export default function Home() {
           )}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground ml-1">スタッフID</label>
-            <input 
-              id="email"
-              name="email"
-              type="text" 
+            <input
+              id="staff_id"
+              name="staff_id"
+              type="text"
               required
-              autoComplete="off"
+              autoComplete="username"
               className="w-full px-4 py-3 rounded-xl border border-border bg-white/50 dark:bg-black/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
-              placeholder="id@example.com"
+              placeholder="ID"
               disabled={isPending}
             />
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground ml-1">パスワード</label>
-            <input 
+            <input
               id="password"
               name="password"
-              type="password" 
+              type="password"
               required
               autoComplete="new-password"
               className="w-full px-4 py-3 rounded-xl border border-border bg-white/50 dark:bg-black/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
@@ -58,7 +58,7 @@ export default function Home() {
             />
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={isPending}
             className="w-full mt-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
@@ -66,12 +66,6 @@ export default function Home() {
             {isPending ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground font-medium">
-            ※本システムは事業所（Admin/Staff）専用です。
-          </p>
-        </div>
       </div>
     </div>
   );

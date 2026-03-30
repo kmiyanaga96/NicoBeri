@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { logout, markAsArrived, markAsDeparted } from './actions'
-import { Clock, CheckCircle2, User, AlertCircle, CalendarDays, Settings } from 'lucide-react'
+import { logout, markAsArrived, markAsDeparted, toggleTransport, updateChildNotes } from './actions'
+import { Clock, CheckCircle2, User, AlertCircle, CalendarDays, Settings, CarTaxiFront, Save } from 'lucide-react'
 
 // 時刻フォーマット用のヘルパー関数
 function formatTime(isoString: string | null) {
@@ -14,7 +14,7 @@ function formatTime(isoString: string | null) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+  searchParams: Promise<any>
 }) {
   const resolvedParams = await searchParams
   const isTomorrow = resolvedParams?.day === 'tomorrow'
@@ -54,11 +54,14 @@ export default async function DashboardPage({
       status,
       clock_in,
       clock_out,
+      pickup,
+      dropoff,
       children (
         id,
         first_name,
         last_name,
-        medical_notes
+        medical_notes,
+        notes
       )
     `)
     .eq('date', targetDateStr)
@@ -94,8 +97,7 @@ export default async function DashboardPage({
             )}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
               <User className="w-4 h-4" />
-              {/* 長いメールアドレスは省略表示 */}
-              <span className="truncate max-w-[120px]" title={user.email}>{user.email}</span>
+              <span className="truncate max-w-[120px]" title={user.email?.split('@')[0]}>{user.email?.split('@')[0]}</span>
             </div>
             <form action={logout}>
               <button type="submit" className="text-sm px-4 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors">
@@ -165,55 +167,91 @@ export default async function DashboardPage({
                             </span>
                           )}
                         </h2>
-                        {/* 配慮事項の表示 */}
-                        {child.medical_notes && child.medical_notes !== '特になし' && (
-                          <p className="text-sm text-orange-600 dark:text-orange-400 mt-1.5 flex items-start flex-wrap max-w-md bg-orange-100/50 dark:bg-orange-950/30 px-2 py-1 rounded-lg border border-orange-200/50 dark:border-orange-900/50">
-                            <AlertCircle className="w-4 h-4 mr-1.5 mt-0.5 flex-shrink-0" />
-                            <span className="leading-snug">{child.medical_notes}</span>
-                          </p>
-                        )}
+                        {/* スタッフ共有事項の表示と編集 */}
+                        <div className="mt-2 w-full max-w-md">
+                          <details className="group [&_summary::-webkit-details-marker]:hidden">
+                            <summary className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-950/30 px-3 py-1.5 rounded-lg border border-orange-200/50 dark:border-orange-900/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+                              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                              <span className="leading-snug truncate max-w-[200px]">{child.notes || child.medical_notes || 'スタッフ共有事項を追加...'}</span>
+                              <span className="text-[10px] ml-auto uppercase tracking-wider opacity-60">Edit</span>
+                            </summary>
+                            <div className="mt-2 p-3 bg-white/50 dark:bg-black/20 border border-orange-200 dark:border-orange-900/30 rounded-xl shadow-sm animate-in slide-in-from-top-1">
+                              <form action={updateChildNotes} className="flex flex-col gap-2">
+                                <input type="hidden" name="childId" value={child.id} />
+                                <textarea
+                                  name="notes"
+                                  defaultValue={child.notes || child.medical_notes || ''}
+                                  placeholder="スタッフ共有事項"
+                                  className="w-full text-sm p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500 min-h-[60px]"
+                                />
+                                <button type="submit" className="self-end flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors">
+                                  <Save className="w-3.5 h-3.5" />
+                                  保存
+                                </button>
+                              </form>
+                            </div>
+                          </details>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Action Controls (打刻ボタン) */}
+                    {/* Action Controls (打刻・送迎ボタン) */}
                     {!isCancelled && (
-                      <div className="flex flex-row items-center gap-2 md:gap-4 w-full md:w-auto bg-black/5 dark:bg-white/5 p-2 rounded-2xl">
-
-                        {/* 到着 */}
-                        <div className="flex-1 md:flex-initial flex items-center justify-between md:justify-start gap-4 px-3 py-1 border-r border-border/50">
-                          <div className="flex flex-col">
-                            <span className="text-[11px] text-muted-foreground font-semibold mb-0.5 tracking-wider uppercase">到着</span>
-                            <span className="font-mono text-xl md:text-2xl font-bold tracking-tight">{formatTime(schedule.clock_in)}</span>
-                          </div>
-                          {!isArrived && (
-                            <form action={markAsArrived.bind(null, schedule.id)}>
-                              <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95">
-                                <Clock className="w-5 h-5" />
-                              </button>
-                            </form>
-                          )}
-                          {isArrived && <CheckCircle2 className="w-7 h-7 text-green-500 filter drop-shadow-sm" />}
+                      <div className="flex flex-col md:flex-row items-end md:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                        {/* 送迎トグル */}
+                        <div className="flex gap-2">
+                          <form action={toggleTransport.bind(null, schedule.id, 'pickup', schedule.pickup)}>
+                            <button type="submit" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${schedule.pickup ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30' : 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+                              <CarTaxiFront className={`w-4 h-4 ${schedule.pickup ? 'text-cyan-500' : 'opacity-50'}`} />
+                              迎え
+                            </button>
+                          </form>
+                          <form action={toggleTransport.bind(null, schedule.id, 'dropoff', schedule.dropoff)}>
+                            <button type="submit" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${schedule.dropoff ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' : 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+                              <CarTaxiFront className={`w-4 h-4 ${schedule.dropoff ? 'text-indigo-500' : 'opacity-50'}`} />
+                              送り
+                            </button>
+                          </form>
                         </div>
 
-                        {/* 退出 */}
-                        <div className="flex-1 md:flex-initial flex items-center justify-between md:justify-start gap-4 px-3 py-1">
-                          <div className="flex flex-col">
-                            <span className="text-[11px] text-muted-foreground font-semibold mb-0.5 tracking-wider uppercase">退出</span>
-                            <span className="font-mono text-xl md:text-2xl font-bold tracking-tight">{formatTime(schedule.clock_out)}</span>
-                          </div>
-                          {isArrived && !isDeparted && (
-                            <form action={markAsDeparted.bind(null, schedule.id)}>
-                              <button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground p-3 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95">
-                                <Clock className="w-5 h-5" />
-                              </button>
-                            </form>
-                          )}
-                          {!isArrived && !isDeparted && (
-                            <div className="w-[44px] h-[44px]"></div> // プレースホルダー（レイアウト調整）
-                          )}
-                          {isDeparted && <CheckCircle2 className="w-7 h-7 text-green-500 filter drop-shadow-sm" />}
-                        </div>
+                        {/* 時間打刻グループ */}
+                        <div className="flex flex-row items-center bg-black/5 dark:bg-white/5 p-2 rounded-2xl w-full md:w-auto">
 
+                          {/* 到着 */}
+                          <div className="flex-1 md:flex-initial flex items-center justify-between md:justify-start gap-4 px-3 py-1 border-r border-border/50">
+                            <div className="flex flex-col">
+                              <span className="text-[11px] text-muted-foreground font-semibold mb-0.5 tracking-wider uppercase">到着</span>
+                              <span className="font-mono text-xl md:text-2xl font-bold tracking-tight">{formatTime(schedule.clock_in)}</span>
+                            </div>
+                            {!isArrived && (
+                              <form action={markAsArrived.bind(null, schedule.id)}>
+                                <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95">
+                                  <Clock className="w-5 h-5" />
+                                </button>
+                              </form>
+                            )}
+                            {isArrived && <CheckCircle2 className="w-7 h-7 text-green-500 filter drop-shadow-sm" />}
+                          </div>
+
+                          {/* 退出 */}
+                          <div className="flex-1 md:flex-initial flex items-center justify-between md:justify-start gap-4 px-3 py-1">
+                            <div className="flex flex-col">
+                              <span className="text-[11px] text-muted-foreground font-semibold mb-0.5 tracking-wider uppercase">退出</span>
+                              <span className="font-mono text-xl md:text-2xl font-bold tracking-tight">{formatTime(schedule.clock_out)}</span>
+                            </div>
+                            {isArrived && !isDeparted && (
+                              <form action={markAsDeparted.bind(null, schedule.id)}>
+                                <button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground p-3 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95">
+                                  <Clock className="w-5 h-5" />
+                                </button>
+                              </form>
+                            )}
+                            {!isArrived && !isDeparted && (
+                              <div className="w-[44px] h-[44px]"></div> // プレースホルダー（レイアウト調整）
+                            )}
+                            {isDeparted && <CheckCircle2 className="w-7 h-7 text-green-500 filter drop-shadow-sm" />}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

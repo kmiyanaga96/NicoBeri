@@ -4,51 +4,54 @@
 
 @layer base {
   :root {
-    /* Soft, warm theme suitable for daycare (vibrant yet clean) */
-    --background: 40 33% 98%; /* Light cream/warm white */
-    --foreground: 222.2 84% 4.9%;
+    /* Soft Blue-Green (Teal/Cyan) theme for better visibility and contrast */
+    --background: 175 20% 98%; /* Light pale teal-tinted white */
+    --foreground: 180 30% 15%; /* Dark teal gray for soft contrast */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 180 30% 15%;
     
-    /* Primary: soft orange / peach */
-    --primary: 24 90% 58%;
+    /* Primary: Soft Teal (Blue-Green) */
+    --primary: 175 55% 45%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary: very light soft orange */
-    --secondary: 32 80% 92%;
-    --secondary-foreground: 24 90% 40%;
+    /* Secondary: Very light soft teal */
+    --secondary: 175 40% 90%;
+    --secondary-foreground: 175 60% 30%;
     
-    /* Accent: cheerful yellow */
-    --accent: 48 96% 53%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Deep Cyan for contrast */
+    --accent: 190 60% 40%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 175 20% 94%;
+    --muted-foreground: 180 15% 45%;
     
-    --border: 214.3 31.8% 91.4%;
+    --border: 175 20% 88%;
     --radius: 1rem;
   }
 
   .dark {
-    /* Sleek dark mode */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 8%;
-    --card-foreground: 210 40% 98%;
+    /* Sleek dark mode with subtle teal tint */
+    --background: 180 20% 8%;
+    --foreground: 175 20% 96%;
+    --card: 180 20% 10%;
+    --card-foreground: 175 20% 96%;
 
-    --primary: 24 90% 58%;
+    /* Primary: Soft Teal slightly darkened for dark mode */
+    --primary: 175 50% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary: Deep teal moss */
+    --secondary: 180 30% 16%;
+    --secondary-foreground: 175 20% 96%;
 
-    --accent: 48 96% 53%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Deep Cyan */
+    --accent: 190 50% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 180 20% 16%;
+    --muted-foreground: 180 15% 65%;
     
-    --border: 217.2 32.6% 17.5%;
+    --border: 180 20% 16%;
   }
 }
 
