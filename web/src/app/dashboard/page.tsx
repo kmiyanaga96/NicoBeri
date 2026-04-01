@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { logout, markAsArrived, markAsDeparted, toggleTransport, updateChildNotes } from './actions'
 import { Clock, CheckCircle2, User, AlertCircle, CalendarDays, Settings, CarTaxiFront, Save } from 'lucide-react'
+import { AutoCloseDetails } from '@/app/components/AutoCloseDetails'
 
 // 時刻フォーマット用のヘルパー関数
 function formatTime(isoString: string | null) {
@@ -60,6 +61,7 @@ export default async function DashboardPage({
         id,
         first_name,
         last_name,
+        sei,
         medical_notes,
         notes
       )
@@ -68,7 +70,12 @@ export default async function DashboardPage({
     .order('created_at', { ascending: true })
 
   // 型安全と存在チェックのためのキャスト
-  const typedSchedules = (schedules as any[]) || []
+  // フリガナ（sei）であいうえお順にソート
+  const typedSchedules = ((schedules as any[]) || []).sort((a, b) => {
+    const seiA = a.children?.sei || a.children?.last_name || ''
+    const seiB = b.children?.sei || b.children?.last_name || ''
+    return seiA.localeCompare(seiB, 'ja')
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background text-foreground p-4 md:p-8">
@@ -168,13 +175,17 @@ export default async function DashboardPage({
                           )}
                         </h2>
                         {/* スタッフ共有事項の表示と編集 */}
+                        {(child.notes || child.medical_notes) && (
                         <div className="mt-2 w-full max-w-md">
-                          <details className="group [&_summary::-webkit-details-marker]:hidden">
-                            <summary className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-950/30 px-3 py-1.5 rounded-lg border border-orange-200/50 dark:border-orange-900/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+                          <AutoCloseDetails
+                            className="group [&_summary::-webkit-details-marker]:hidden"
+                            summaryClassName="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-950/30 px-3 py-1.5 rounded-lg border border-orange-200/50 dark:border-orange-900/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors"
+                            summaryContent={<>
                               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                              <span className="leading-snug truncate max-w-[200px]">{child.notes || child.medical_notes || 'スタッフ共有事項を追加...'}</span>
+                              <span className="leading-snug truncate max-w-[200px]">{child.notes || child.medical_notes}</span>
                               <span className="text-[10px] ml-auto uppercase tracking-wider opacity-60">Edit</span>
-                            </summary>
+                            </>}
+                          >
                             <div className="mt-2 p-3 bg-white/50 dark:bg-black/20 border border-orange-200 dark:border-orange-900/30 rounded-xl shadow-sm animate-in slide-in-from-top-1">
                               <form action={updateChildNotes} className="flex flex-col gap-2">
                                 <input type="hidden" name="childId" value={child.id} />
@@ -190,8 +201,9 @@ export default async function DashboardPage({
                                 </button>
                               </form>
                             </div>
-                          </details>
+                          </AutoCloseDetails>
                         </div>
+                        )}
                       </div>
                     </div>
 

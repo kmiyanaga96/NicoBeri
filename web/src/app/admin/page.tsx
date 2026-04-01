@@ -1,8 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Users, CalendarClock, ArrowLeft, ShieldCheck, Power, AlertTriangle, UserPlus, KeyRound } from 'lucide-react'
-import { toggleStaffActive, updateScheduleTime, createNewStaffAccount, resetStaffPassword, upsertChild } from './actions'
+import { Users, CalendarClock, ArrowLeft, ShieldCheck, Power, AlertTriangle, UserPlus, KeyRound, CarTaxiFront } from 'lucide-react'
+import { toggleStaffActive, updateScheduleTime, createNewStaffAccount, resetStaffPassword, upsertChild, updateScheduleTransport } from './actions'
+import { AutoCloseDetails } from '@/app/components/AutoCloseDetails'
 
 function extractTime(isoString: string | null) {
   if (!isoString) return ''
@@ -38,17 +39,17 @@ export default async function AdminDashboardPage({
     redirect('/dashboard') // 管理者以外は追い出す
   }
 
-  // スタッフ一覧を取得
+  // スタッフ一覧を取得（nameのアルファベット順）
   const { data: staffList } = await supabase
     .from('staff_profiles')
     .select('*')
-    .order('created_at', { ascending: true })
+    .order('name', { ascending: true })
 
-  // 児童一覧を取得
+  // 児童一覧を取得（フリガナあいうえお順）
   const { data: childrenList } = await supabase
     .from('children')
     .select('*')
-    .order('last_name', { ascending: true })
+    .order('sei', { ascending: true })
 
   // 選択された日付のスケジュール一覧（デフォルトは本日）
   const { data: schedules } = await supabase
@@ -59,13 +60,20 @@ export default async function AdminDashboardPage({
       date,
       clock_in,
       clock_out,
-      children ( id, first_name, last_name )
+      pickup,
+      dropoff,
+      children ( id, first_name, last_name, sei )
     `)
     .eq('date', targetDateStr)
     .order('created_at', { ascending: true })
 
   const typedStaffList = (staffList as any[]) || []
-  const typedSchedules = (schedules as any[]) || []
+  // フリガナ（sei）であいうえお順にソート
+  const typedSchedules = ((schedules as any[]) || []).sort((a, b) => {
+    const seiA = a.children?.sei || a.children?.last_name || ''
+    const seiB = b.children?.sei || b.children?.last_name || ''
+    return seiA.localeCompare(seiB, 'ja')
+  })
   const typedChildren = (childrenList as any[]) || []
 
   return (
@@ -296,6 +304,41 @@ export default async function AdminDashboardPage({
                                 更新
                               </button>
                             </form>
+
+                            {/* 送迎修正フォーム */}
+                            <div className="flex items-center justify-between gap-4 bg-black/20 p-3 rounded-xl border border-white/5">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-semibold text-slate-400 uppercase w-10">送迎</span>
+                                <div className="flex gap-2">
+                                  <form action={updateScheduleTransport}>
+                                    <input type="hidden" name="scheduleId" value={schedule.id} />
+                                    <input type="hidden" name="field" value="pickup" />
+                                    <input type="hidden" name="currentValue" value={schedule.pickup ? 'true' : 'false'} />
+                                    <button type="submit" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                      schedule.pickup
+                                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                                        : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700'
+                                    }`}>
+                                      <CarTaxiFront className={`w-3.5 h-3.5 ${schedule.pickup ? 'text-cyan-400' : 'opacity-50'}`} />
+                                      迎え
+                                    </button>
+                                  </form>
+                                  <form action={updateScheduleTransport}>
+                                    <input type="hidden" name="scheduleId" value={schedule.id} />
+                                    <input type="hidden" name="field" value="dropoff" />
+                                    <input type="hidden" name="currentValue" value={schedule.dropoff ? 'true' : 'false'} />
+                                    <button type="submit" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                      schedule.dropoff
+                                        ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                        : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700'
+                                    }`}>
+                                      <CarTaxiFront className={`w-3.5 h-3.5 ${schedule.dropoff ? 'text-indigo-400' : 'opacity-50'}`} />
+                                      送り
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))
@@ -355,11 +398,15 @@ export default async function AdminDashboardPage({
                     {/* 既存児童一括表示 */}
                     <div className="space-y-2">
                       {typedChildren.map((child) => (
-                        <details key={child.id} className="group bg-black/20 border border-white/5 rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
-                          <summary className="flex items-center justify-between cursor-pointer p-3 font-medium text-sm text-slate-200 hover:bg-white/5 transition-colors">
+                        <AutoCloseDetails
+                          key={child.id}
+                          className="group bg-black/20 border border-white/5 rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden"
+                          summaryClassName="flex items-center justify-between cursor-pointer p-3 font-medium text-sm text-slate-200 hover:bg-white/5 transition-colors"
+                          summaryContent={<>
                             {child.last_name} {child.first_name}
                             <span className="text-[10px] text-slate-500 bg-black/40 px-2 py-0.5 rounded">編集 v</span>
-                          </summary>
+                          </>}
+                        >
                           <div className="p-4 pt-2 border-t border-white/5">
                             <form action={upsertChild} className="flex flex-col gap-3">
                               <input type="hidden" name="id" value={child.id} />
@@ -384,7 +431,7 @@ export default async function AdminDashboardPage({
                               </button>
                             </form>
                           </div>
-                        </details>
+                        </AutoCloseDetails>
                       ))}
                     </div>
                   </div>

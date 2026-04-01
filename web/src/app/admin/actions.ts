@@ -157,3 +157,26 @@ export async function upsertChild(formData: FormData) {
   
   revalidatePath('/admin')
 }
+
+// 管理者用: 送迎フラグのトグル
+export async function updateScheduleTransport(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const scheduleId = formData.get('scheduleId') as string
+  const field = formData.get('field') as 'pickup' | 'dropoff'
+  const currentValue = formData.get('currentValue') === 'true'
+
+  if (!scheduleId || !field) return
+
+  const { error } = await supabase
+    .from('daily_schedules')
+    .update({ [field]: !currentValue })
+    .eq('id', scheduleId)
+
+  if (error) {
+    console.error(`Error toggling ${field}:`, error)
+  }
+  revalidatePath('/admin')
+}
