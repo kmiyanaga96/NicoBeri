@@ -85,6 +85,79 @@ export async function toggleStaffActive(staffId: string, currentStatus: boolean)
   revalidatePath('/admin')
 }
 
+// スタッフアカウントの削除（auth + profile）
+export async function deleteStaffAccount(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const targetUserId = formData.get('user_id') as string
+  if (!targetUserId) throw new Error('No target user specified')
+
+  // 自分自身は削除不可
+  if (targetUserId === user.id) throw new Error('Cannot delete yourself')
+
+  const adminClient = createAdminClient()
+
+  // staff_profilesから削除
+  const { error: profileError } = await adminClient
+    .from('staff_profiles')
+    .delete()
+    .eq('id', targetUserId)
+
+  if (profileError) {
+    console.error('Error deleting staff profile:', profileError)
+  }
+
+  // auth.usersから削除
+  const { error: authError } = await adminClient.auth.admin.deleteUser(targetUserId)
+
+  if (authError) {
+    console.error('Error deleting auth user:', authError)
+    throw new Error(authError.message)
+  }
+
+  revalidatePath('/admin')
+}
+
+// スタッフ情報の更新（スタッフID・氏名）
+export async function updateStaffProfile(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const targetUserId = formData.get('user_id') as string
+  const newName = formData.get('name') as string
+  const newStaffId = formData.get('staff_id') as string
+
+  if (!targetUserId) throw new Error('No target user specified')
+
+  const adminClient = createAdminClient()
+
+  // 氏名を更新
+  if (newName) {
+    const { error } = await adminClient
+      .from('staff_profiles')
+      .update({ name: newName })
+      .eq('id', targetUserId)
+    if (error) console.error('Error updating name:', error)
+  }
+
+  // スタッフIDを更新（= メールアドレスを変更）
+  if (newStaffId) {
+    const newEmail = `${newStaffId}@nicoberi.com`
+    const { error } = await adminClient.auth.admin.updateUserById(targetUserId, {
+      email: newEmail,
+    })
+    if (error) {
+      console.error('Error updating staff ID:', error)
+      throw new Error(error.message)
+    }
+  }
+
+  revalidatePath('/admin')
+}
+
 // 児童情報の追加・更新
 export async function upsertChild(formData: FormData) {
   const supabase = await createClient()

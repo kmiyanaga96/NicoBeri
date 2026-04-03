@@ -1,8 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Users, ArrowLeft, ShieldCheck, Power, AlertTriangle, UserPlus, KeyRound, CalendarClock, Trash2, Plus, X } from 'lucide-react'
-import { toggleStaffActive, createNewStaffAccount, resetStaffPassword, upsertChild, deleteChild, addSchedule, removeSchedule } from './actions'
+import { Users, ArrowLeft, ShieldCheck, Power, AlertTriangle, UserPlus, KeyRound, CalendarClock, Trash2, Plus, X, Pencil } from 'lucide-react'
+import { toggleStaffActive, createNewStaffAccount, resetStaffPassword, deleteStaffAccount, updateStaffProfile, upsertChild, deleteChild, addSchedule, removeSchedule } from './actions'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { AutoCloseDetails } from '@/app/components/AutoCloseDetails'
 import { ConfirmButton } from '@/app/components/ConfirmButton'
 
@@ -38,6 +39,16 @@ export default async function AdminDashboardPage({
     .from('staff_profiles')
     .select('*')
     .order('name', { ascending: true })
+
+  // auth.usersからメール（=スタッフID）を取得
+  const adminClient = createAdminClient()
+  const { data: authUsers } = await adminClient.auth.admin.listUsers()
+  const emailMap: Record<string, string> = {}
+  for (const au of authUsers?.users || []) {
+    if (au.email) {
+      emailMap[au.id] = au.email.replace('@nicoberi.com', '')
+    }
+  }
 
   // 児童一覧を取得（フリガナあいうえお順）
   const { data: childrenList } = await supabase
@@ -133,40 +144,111 @@ export default async function AdminDashboardPage({
                 スタッフ権限・アカウント凍結管理
               </h2>
               <div className="space-y-3">
-                {typedStaffList.map((staff) => (
-                  <div key={staff.id} className={`p-4 rounded-2xl border transition-all ${staff.is_active ? 'bg-white/5 border-white/10' : 'bg-red-950/30 border-red-500/30 opacity-70'}`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold">{staff.name?.split('@')[0] || '名称未設定'}</span>
-                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${staff.role === 'admin' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-700 text-slate-300'}`}>
-                            {staff.role}
-                          </span>
+                {typedStaffList.map((staff) => {
+                  const staffId = emailMap[staff.id] || '不明'
+                  return (
+                    <AutoCloseDetails
+                      key={staff.id}
+                      className={`rounded-2xl border transition-all overflow-hidden [&_summary::-webkit-details-marker]:hidden ${staff.is_active ? 'bg-white/5 border-white/10' : 'bg-red-950/30 border-red-500/30 opacity-70'}`}
+                      summaryClassName="flex justify-between items-center p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                      summaryContent={<>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{staff.name?.split('@')[0] || '名称未設定'}</span>
+                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${staff.role === 'admin' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-700 text-slate-300'}`}>
+                              {staff.role}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                            {staff.is_active ? (
+                              <span className="text-green-400">● アクティブ</span>
+                            ) : (
+                              <span className="text-red-400"><AlertTriangle className="w-3 h-3 inline mr-1" />凍結済み</span>
+                            )}
+                            <span className="text-slate-500 ml-2">ID: {staffId}</span>
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                          {staff.is_active ? (
-                            <span className="text-green-400">● アクティブ</span>
-                          ) : (
-                            <span className="text-red-400"><AlertTriangle className="w-3 h-3 inline mr-1" />凍結済み</span>
-                          )}
-                        </p>
-                      </div>
-                      {/* 自分自身は凍結不可 */}
-                      {staff.id !== user.id && staff.role !== 'admin' && (
-                        <form action={toggleStaffActive.bind(null, staff.id, staff.is_active)}>
-                          <button type="submit" className={`p-2 rounded-xl transition-all shadow-md ${staff.is_active ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'}`}>
-                            <Power className="w-5 h-5" />
+                        <span className="text-[10px] text-slate-500 bg-black/40 px-2 py-0.5 rounded">詳細 ▼</span>
+                      </>}
+                    >
+                      <div className="p-4 pt-2 border-t border-white/5 space-y-4">
+                        {/* スタッフ詳細情報 */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1">スタッフID</span>
+                            <span className="text-slate-200 font-mono">{staffId}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1">スタッフ氏名</span>
+                            <span className="text-slate-200">{staff.name || '名称未設定'}</span>
+                          </div>
+                        </div>
+
+                        {/* 編集フォーム */}
+                        <form action={updateStaffProfile} className="space-y-3 pt-2 border-t border-white/5">
+                          <input type="hidden" name="user_id" value={staff.id} />
+                          <p className="text-xs text-slate-400 flex items-center gap-1"><Pencil className="w-3 h-3" /> 情報を編集</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] text-slate-400 mb-1">スタッフID</label>
+                              <input type="text" name="staff_id" defaultValue={staffId} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-400 mb-1">氏名</label>
+                              <input type="text" name="name" defaultValue={staff.name || ''} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500" />
+                            </div>
+                          </div>
+                          <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-colors">
+                            更新
                           </button>
                         </form>
-                      )}
-                    </div>
-                  </div>
-                ))}
+
+                        {/* パスワード変更 */}
+                        <form action={resetStaffPassword} className="space-y-3 pt-2 border-t border-white/5">
+                          <input type="hidden" name="user_id" value={staff.id} />
+                          <p className="text-xs text-slate-400 flex items-center gap-1"><KeyRound className="w-3 h-3" /> パスワード変更</p>
+                          <div className="flex gap-3 items-end">
+                            <div className="flex-1">
+                              <label className="block text-[10px] text-slate-400 mb-1">新パスワード (6文字以上)</label>
+                              <input type="password" name="new_password" required placeholder="••••••••" minLength={6} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500" />
+                            </div>
+                            <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap">
+                              変更
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* アクション: 凍結 / 削除 */}
+                        <div className="flex items-center gap-3 pt-2 border-t border-white/5">
+                          {staff.id !== user.id && staff.role !== 'admin' && (
+                            <form action={toggleStaffActive.bind(null, staff.id, staff.is_active)}>
+                              <button type="submit" className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${staff.is_active ? 'text-red-400 hover:bg-red-500/10' : 'text-green-400 hover:bg-green-500/10'}`}>
+                                <Power className="w-4 h-4" />
+                                {staff.is_active ? 'アカウントを凍結' : '凍結を解除'}
+                              </button>
+                            </form>
+                          )}
+                          {staff.id !== user.id && (
+                            <form action={deleteStaffAccount}>
+                              <input type="hidden" name="user_id" value={staff.id} />
+                              <ConfirmButton
+                                message={`${staff.name || staffId} のアカウントを完全に削除しますか？\nこの操作は取り消せません。`}
+                                className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-sm font-medium hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                アカウントを削除
+                              </ConfirmButton>
+                            </form>
+                          )}
+                        </div>
+                      </div>
+                    </AutoCloseDetails>
+                  )
+                })}
               </div>
 
-              {/* 追加: アカウント作成とパスワード編集UI */}
-              <div className="mt-12 space-y-8 border-t border-white/10 pt-8">
-                {/* 新規スタッフ登録 */}
+              {/* 新規スタッフ登録 */}
+              <div className="mt-8 border-t border-white/10 pt-8">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <UserPlus className="w-5 h-5 text-emerald-400" />
@@ -176,19 +258,19 @@ export default async function AdminDashboardPage({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">スタッフID (半角英数字)</label>
-                        <input type="text" name="staff_id" required placeholder="例: matsushi" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
+                        <input type="text" name="staff_id" required placeholder="例: matsushi" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500" />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">氏名</label>
-                        <input type="text" name="name" required placeholder="例: 増田 督史" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
+                        <input type="text" name="name" required placeholder="例: 増田 督史" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500" />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">初期パスワード (6文字以上)</label>
-                        <input type="password" name="password" required placeholder="••••••••" minLength={6} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
+                        <input type="password" name="password" required placeholder="••••••••" minLength={6} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500" />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">権限</label>
-                        <select name="role" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <select name="role" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500">
                           <option value="staff">一般スタッフ (staff)</option>
                           <option value="admin">管理者 (admin)</option>
                         </select>
@@ -196,34 +278,6 @@ export default async function AdminDashboardPage({
                     </div>
                     <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-6 rounded-xl transition-colors text-sm shadow-md">
                       アカウントを発行する
-                    </button>
-                  </form>
-                </div>
-
-                {/* パスワードリセット */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                    <KeyRound className="w-5 h-5 text-orange-400" />
-                    パスワードの強制変更
-                  </h3>
-                  <form action={resetStaffPassword} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-slate-400 mb-1">対象スタッフ</label>
-                        <select name="user_id" required className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
-                          <option value="">選択してください</option>
-                          {typedStaffList.map(staff => (
-                            <option key={staff.id} value={staff.id}>{staff.name?.split('@')[0]} ({staff.role})</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-400 mb-1">新パスワード (6文字以上)</label>
-                        <input type="password" name="new_password" required placeholder="••••••••" minLength={6} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
-                      </div>
-                    </div>
-                    <button type="submit" className="bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-6 rounded-xl transition-colors text-sm shadow-md">
-                      パスワードを変更する
                     </button>
                   </form>
                 </div>
