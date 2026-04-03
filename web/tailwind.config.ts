@@ -32,7 +32,7 @@ const config: Config = {
         border: "hsl(var(--border))",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans JP", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out",
