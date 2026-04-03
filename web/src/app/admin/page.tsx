@@ -52,8 +52,8 @@ export default async function AdminDashboardPage({
     const d = new Date(todayDate)
     d.setDate(d.getDate() + i)
     const val = d.toISOString().split('T')[0]
-    const dow = ['日','月','火','水','木','金','土'][d.getDay()]
-    const label = `${d.getMonth()+1}/${d.getDate()} (${dow})`
+    const dow = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
+    const label = `${d.getMonth() + 1}/${d.getDate()} (${dow})`
     dateSuggestions.push({ value: val, label })
   }
 
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">スタッフID (半角英数字)</label>
-                        <input type="text" name="staff_id" required placeholder="例: matsushi" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
+                        <input type="text" name="staff_id" required placeholder="例: amasuda" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-400 mb-1">氏名</label>
@@ -278,9 +278,8 @@ export default async function AdminDashboardPage({
                     const isSat = d.getDay() === 6
                     return (
                       <details key={ds.value} className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
-                        <summary className={`flex items-center justify-between cursor-pointer px-4 py-2.5 text-sm font-medium hover:bg-white/5 transition-colors ${
-                          isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-slate-200'
-                        }`}>
+                        <summary className={`flex items-center justify-between cursor-pointer px-4 py-2.5 text-sm font-medium hover:bg-white/5 transition-colors ${isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-slate-200'
+                          }`}>
                           <span>{ds.label}</span>
                           <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-bold">{dayRecords.length}名</span>
                         </summary>
