@@ -38,7 +38,7 @@ export default async function DashboardPage({
   // スタッフプロフィールの取得（is_activeとroleの確認）
   const { data: staffProfile } = await supabase
     .from('staff_profiles')
-    .select('role, is_active')
+    .select('name, role, is_active')
     .eq('id', user.id)
     .single()
 
@@ -203,10 +203,10 @@ export default async function DashboardPage({
                 管理者パネル
               </Link>
             )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
-              <User className="w-4 h-4" />
-              <span className="truncate max-w-[120px]" title={user.email?.split('@')[0]}>{user.email?.split('@')[0]}</span>
-            </div>
+            <button className="flex items-center gap-2 text-sm text-muted-foreground mr-2 hover:bg-black/5 dark:hover:bg-white/5 py-1 px-2 rounded-lg transition-colors cursor-pointer group" title="勤務予定・給与情報 (準備中)">
+              <User className="w-4 h-4 group-hover:text-primary transition-colors" />
+              <span className="truncate max-w-[120px] font-bold group-hover:text-foreground transition-colors">{staffProfile?.name}</span>
+            </button>
             <form action={logout}>
               <button type="submit" className="text-sm px-4 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors">
                 ログアウト

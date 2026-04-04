@@ -11,7 +11,8 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<any>
 }) {
-  await searchParams // no longer used for tabs
+  const resolvedParams = await searchParams
+  const activeTab = resolvedParams?.tab || 'staff' // 'staff' | 'accounting'
   const targetMonthStr = new Date().toISOString().substring(0, 7) // 'YYYY-MM'
 
   const supabase = await createClient()
@@ -54,7 +55,7 @@ export default async function AdminDashboardPage({
                 管理者パネル
               </h1>
             </div>
-            <p className="text-slate-400 text-sm">スタッフ管理とデータ管理を行います。</p>
+            <p className="text-slate-400 text-sm">スタッフ管理と事務を行います。</p>
           </div>
           <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors border border-white/10 text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
@@ -62,20 +63,39 @@ export default async function AdminDashboardPage({
           </Link>
         </header>
 
+        {/* Tabs */}
+        <div className="flex bg-black/20 p-1.5 rounded-2xl w-fit mb-8 shadow-inner border border-white/5">
+          <Link
+            href="/admin?tab=staff"
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-1.5 ${activeTab === 'staff' ? 'bg-cyan-500/20 text-cyan-300 shadow-sm scale-105 border border-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          >
+            <Users className="w-4 h-4" />
+            スタッフ管理
+          </Link>
+          <Link
+            href="/admin?tab=accounting"
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-1.5 ${activeTab === 'accounting' ? 'bg-cyan-500/20 text-cyan-300 shadow-sm scale-105 border border-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          >
+            <span className="font-serif">¥</span>
+            会計
+          </Link>
+        </div>
+
         {/* Unified Content */}
         <div className="w-full space-y-12">
+          {activeTab === 'staff' && (
+            <>
+              {/* スタッフ管理パネル */}
+              <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl">
+                <h2 className="text-xl font-semibold flex items-center gap-2 border-b border-white/10 pb-3 mb-6">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  スタッフ管理
+                </h2>
 
-          {/* スタッフ管理パネル */}
-          <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl">
-            <h2 className="text-xl font-semibold flex items-center gap-2 border-b border-white/10 pb-3 mb-6">
-              <Users className="w-5 h-5 text-cyan-400" />
-              スタッフアカウント管理
-            </h2>
-            
             <div className="space-y-3">
               {typedStaffList.map((staff) => (
-                <AutoCloseDetails 
-                  key={staff.id} 
+                <AutoCloseDetails
+                  key={staff.id}
                   className={`group rounded-2xl border transition-all ${staff.is_active ? 'bg-white/5 border-white/10' : 'bg-red-950/30 border-red-500/30 opacity-80'} overflow-hidden [&_summary::-webkit-details-marker]:hidden`}
                   summaryClassName={`flex justify-between items-center p-4 cursor-pointer hover:bg-white/5 transition-colors`}
                   summaryContent={
@@ -87,14 +107,11 @@ export default async function AdminDashboardPage({
                             {staff.role}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                          {staff.is_active ? (
-                            <span className="text-green-400">● アクティブ</span>
-                          ) : (
-                            <span className="text-red-400"><AlertTriangle className="w-3 h-3 inline mr-1" />凍結済み</span>
-                          )}
-                          <span className="opacity-50 ml-2">{staff.id?.split('-')[0]}...</span>
-                        </p>
+                        {staff.is_active ? null : (
+                          <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 inline mr-1" />凍結済み
+                          </p>
+                        )}
                       </div>
                       <span className="text-[10px] text-slate-500 bg-black/40 px-2 py-1 rounded">詳細・編集 v</span>
                     </div>
@@ -132,7 +149,7 @@ export default async function AdminDashboardPage({
                         </button>
                       </div>
                     </form>
-                    
+
                     <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
                       {/* 自分自身は凍結・削除不可 */}
                       {staff.id !== user.id && staff.role !== 'admin' && (
@@ -146,7 +163,7 @@ export default async function AdminDashboardPage({
                       {staff.id !== user.id && (
                         <form action={deleteStaffAccount}>
                           <input type="hidden" name="user_id" value={staff.id} />
-                          <ConfirmButton 
+                          <ConfirmButton
                             message={`${staff.name} のアカウントを完全に削除しますか？\nこの操作は取り消せません。`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shadow-md text-xs font-bold bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/20"
                           >
@@ -227,6 +244,15 @@ export default async function AdminDashboardPage({
               </div>
             </div>
           </section>
+            </>
+          )}
+
+          {activeTab === 'accounting' && (
+            <div className="bg-white/5 border border-white/10 p-12 rounded-3xl text-center flex flex-col items-center justify-center text-slate-400">
+              <div className="text-4xl mb-4 font-bold font-serif opacity-50">¥</div>
+              <p>将来的にここで帳簿管理などの会計機能が利用可能になります。</p>
+            </div>
+          )}
 
         </div>
       </div>
