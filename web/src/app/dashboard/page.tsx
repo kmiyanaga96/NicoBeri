@@ -604,72 +604,88 @@ export default async function DashboardPage({
         {activeTab === 'children' && (
           <div className="space-y-6 pb-12 w-full max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-            {/* 施設・学校（預かり所）マスタ管理 */}
+            {/* 施設・学校（預かり所）の登録 */}
             <div className="glass border border-white/20 dark:border-white/10 rounded-3xl p-6">
-              <details className="group bg-orange-500/10 border border-orange-500/20 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex items-center justify-between cursor-pointer p-4 font-bold text-orange-600 dark:text-orange-400">
+              <details className="group bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex items-center justify-between cursor-pointer p-4 font-bold text-primary">
                   <div className="flex items-center gap-2">
                     <Building className="w-5 h-5" />
-                    預かり先・施設マスタの連携管理
+                    預かり所・学校の登録
                   </div>
-                  <span className="text-xs opacity-60">登録 {typedFacilities.length}件</span>
+                  <span className="text-[10px] text-muted-foreground bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded-lg tracking-widest font-bold">登録 {typedFacilities.length}件</span>
                 </summary>
-                <div className="p-5 pt-0 border-t border-orange-500/10 bg-background/50 space-y-6 mt-4">
+                <div className="p-5 pt-0 border-t border-primary/10 bg-background/50 space-y-6 mt-4">
                   {/* 新規施設登録 */}
-                  <form action={upsertFacility} className="bg-white/50 dark:bg-black/20 p-4 border border-orange-200/50 dark:border-orange-900/50 rounded-xl shadow-sm space-y-3">
-                    <h3 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">新規登録</h3>
-                    <div className="flex flex-col md:flex-row gap-3">
-                      <div className="flex-1">
-                        <input type="text" name="name" required placeholder="施設・学校名 (例: 第一小学校)" className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none" />
+                  <form action={upsertFacility} className="flex flex-col gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] text-muted-foreground uppercase mb-1">施設・学校名</label>
+                        <input type="text" name="name" required placeholder="例: 第一小学校" className="w-full bg-background border border-border/50 text-sm px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                       </div>
-                      <div className="flex-1 md:flex-[2]">
-                        <input type="text" name="address" placeholder="住所 (送迎ナビで開く用)" className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none" />
+                      <div className="md:col-span-3">
+                        <label className="block text-[10px] text-muted-foreground uppercase mb-1">住所</label>
+                        <input type="text" name="address" placeholder="例: 東京都浦安市..." className="w-full bg-background border border-border/50 text-sm px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                       </div>
-                      <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl transition-colors shadow-sm">
-                        マスタ登録
+                    </div>
+                    <div className="flex justify-start">
+                      <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 rounded-xl transition-colors shadow-m text-sm">
+                        追加する
                       </button>
                     </div>
                   </form>
                   
                   {/* 登録済み施設一覧 */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">登録済み施設一覧</h3>
+                  <div className="space-y-2 mt-6">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase mb-3 border-b border-border/50 pb-1">登録されている施設</h3>
                     {typedFacilities.length === 0 ? (
-                      <p className="text-sm text-muted-foreground p-3">登録されていません。</p>
+                      <p className="text-sm text-muted-foreground p-3 bg-secondary/20 rounded-xl">まだ登録されていません。上のフォームから登録してください。</p>
                     ) : (
                       typedFacilities.map(f => (
-                        <AutoCloseDetails key={f.id} className="bg-white/70 dark:bg-black/30 border border-orange-100 dark:border-orange-900/30 rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden"
-                          summaryClassName="px-4 py-2.5 flex items-center justify-between text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                        <AutoCloseDetails key={f.id} className="group glass rounded-2xl border border-white/10 overflow-hidden [&_summary::-webkit-details-marker]:hidden"
+                          summaryClassName="px-4 py-3 flex items-center justify-between text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                           summaryContent={<>
-                            <div className="font-bold flex items-center gap-2">
-                              <Building className="w-4 h-4 text-orange-400" /> {f.name}
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold flex-shrink-0">
+                                <Building className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <span className="font-bold text-sm block">{f.name}</span>
+                                <span className="text-[10px] text-muted-foreground mt-0.5">{f.address || '住所未設定'}</span>
+                              </div>
                             </div>
-                            <span className="text-xs text-muted-foreground mr-4 truncate max-w-[200px]">{f.address}</span>
+                            <span className="text-[10px] text-muted-foreground bg-black/10 dark:bg-white/10 px-2.5 py-1 rounded-lg uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                <Settings className="w-3 h-3" />
+                                詳細・編集
+                            </span>
                           </>}
                         >
-                          <div className="p-4 border-t border-orange-200/50 dark:border-orange-900/50 space-y-3">
-                            <form action={upsertFacility} className="flex flex-col md:flex-row gap-3">
+                          <div className="p-5 pt-4 border-t border-border/50 bg-background/50">
+                            <form action={upsertFacility} className="flex flex-col gap-4">
                               <input type="hidden" name="id" value={f.id} />
-                              <div className="flex-1">
-                                <label className="block text-[10px] text-muted-foreground uppercase mb-1">名称</label>
-                                <input type="text" name="name" defaultValue={f.name} required className="w-full bg-background border border-border/50 text-sm px-3 py-1.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div className="md:col-span-2">
+                                  <label className="block text-[10px] text-muted-foreground uppercase mb-1">施設・学校名</label>
+                                  <input type="text" name="name" defaultValue={f.name} required className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
+                                <div className="md:col-span-3">
+                                  <label className="block text-[10px] text-muted-foreground uppercase mb-1">住所</label>
+                                  <input type="text" name="address" defaultValue={f.address || ''} className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
                               </div>
-                              <div className="flex-1 md:flex-[2]">
-                                <label className="block text-[10px] text-muted-foreground uppercase mb-1">住所</label>
-                                <input type="text" name="address" defaultValue={f.address || ''} className="w-full bg-background border border-border/50 text-sm px-3 py-1.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                              <div className="flex items-center justify-between mt-2 pt-4 border-t border-border/50">
+                                <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-1.5 rounded-xl transition-colors shadow-m text-sm">
+                                  変更を保存
+                                </button>
+                                <form action={deleteFacility}>
+                                  <input type="hidden" name="facilityId" value={f.id} />
+                                  <ConfirmButton
+                                    message={`${f.name} を削除しますか？\n(既に紐づいている児童からは施設情報のみ解除されます)`}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shadow-md text-[10px] font-bold bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/20"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5"/>この施設を削除
+                                  </ConfirmButton>
+                                </form>
                               </div>
-                              <div className="flex items-end">
-                                <button type="submit" className="bg-orange-500/20 text-orange-600 dark:text-orange-400 hover:bg-orange-500/30 font-bold px-4 py-1.5 rounded-lg transition-colors text-sm">保存</button>
-                              </div>
-                            </form>
-                            <form action={deleteFacility} className="flex justify-end pt-2">
-                              <input type="hidden" name="facilityId" value={f.id} />
-                              <ConfirmButton
-                                message={`${f.name} を削除しますか？ (紐付けられた児童の施設情報もリセットされます)`}
-                                className="text-[10px] font-bold text-red-500 hover:bg-red-500/10 px-2 py-1 rounded transition-colors flex items-center gap-1.5"
-                              >
-                                <Trash2 className="w-3 h-3 inline"/>削除
-                              </ConfirmButton>
                             </form>
                           </div>
                         </AutoCloseDetails>
