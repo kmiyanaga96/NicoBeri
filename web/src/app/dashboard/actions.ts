@@ -192,6 +192,10 @@ export async function upsertChild(formData: FormData) {
 
   if (!first_name || !last_name) return
 
+  const home_address = formData.get('home_address') as string || null
+  const facility_idStr = formData.get('facility_id') as string
+  const facility_id = facility_idStr ? facility_idStr : null
+
   const payload = {
     first_name,
     last_name,
@@ -202,6 +206,8 @@ export async function upsertChild(formData: FormData) {
     disability_level,
     medical_notes,
     notes,
+    home_address,
+    facility_id,
     active: true
   }
 
@@ -272,6 +278,46 @@ export async function removeSchedule(formData: FormData) {
   if (!scheduleId) return
 
   await supabase.from('daily_schedules').delete().eq('id', scheduleId)
+
+  revalidatePath('/dashboard')
+}
+
+// --- 施設（預かり所）の追加・更新 ---
+export async function upsertFacility(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const id = formData.get('id') as string
+  const name = formData.get('name') as string
+  const address = formData.get('address') as string
+
+  if (!name) return
+
+  const payload = {
+    name,
+    address: address || null
+  }
+
+  if (id) {
+    await supabase.from('facilities').update(payload).eq('id', id)
+  } else {
+    await supabase.from('facilities').insert(payload)
+  }
+  
+  revalidatePath('/dashboard')
+}
+
+// --- 施設の削除 ---
+export async function deleteFacility(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const facilityId = formData.get('facilityId') as string
+  if (!facilityId) return
+
+  await supabase.from('facilities').delete().eq('id', facilityId)
 
   revalidatePath('/dashboard')
 }

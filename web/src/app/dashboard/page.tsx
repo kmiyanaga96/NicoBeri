@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { logout, markAsArrived, markAsDeparted, toggleTransport, updateChildNotes, updateScheduleTime, updateScheduleTransport, upsertChild, deleteChild, addSchedule, removeSchedule } from './actions'
-import { Clock, CheckCircle2, User, AlertCircle, CalendarDays, Settings, CarTaxiFront, Save, History, Plus, X, Trash2, Users } from 'lucide-react'
+import { logout, markAsArrived, markAsDeparted, toggleTransport, updateChildNotes, updateScheduleTime, updateScheduleTransport, upsertChild, deleteChild, addSchedule, removeSchedule, upsertFacility, deleteFacility } from './actions'
+import { Clock, CheckCircle2, User, AlertCircle, CalendarDays, Settings, CarTaxiFront, Save, History, Plus, X, Trash2, Users, MapPin, Building } from 'lucide-react'
 import { AutoCloseDetails } from '@/app/components/AutoCloseDetails'
 import { ConfirmButton } from '@/app/components/ConfirmButton'
 
@@ -77,7 +77,9 @@ export default async function DashboardPage({
           notes,
           gender,
           recipient_number,
-          disability_level
+          disability_level,
+          home_address,
+          facilities ( name, address )
         )
       `)
       .eq('date', targetDateStr)
@@ -92,10 +94,17 @@ export default async function DashboardPage({
 
   // --- 児童リスト（スケジュール登録用＆児童名簿用） ---
   let typedChildren: any[] = []
+  let typedFacilities: any[] = []
   if (activeTab === 'children' || (activeTab === 'schedule' && subTab === 'register')) {
+    const { data: facilitiesData } = await supabase
+      .from('facilities')
+      .select('*')
+      .order('name', { ascending: true })
+    typedFacilities = (facilitiesData as any[]) || []
+
     const { data: childrenData } = await supabase
       .from('children')
-      .select('*')
+      .select('*, facilities(*)')
       .order('sei', { ascending: true })
     typedChildren = (childrenData as any[]) || []
   }
@@ -425,7 +434,7 @@ export default async function DashboardPage({
                                 <div>
                                   <span className="font-bold text-sm">{child.last_name} {child.first_name}</span>
                                   <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold ${schedule.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/15 text-teal-500 dark:text-teal-400'}`}>
-                                    {schedule.status === 'cancelled' ? 'キャンセル' : schedule.status === 'present' ? '預かり' : schedule.status}
+                                    {schedule.status === 'cancelled' ? 'キャンセル' : schedule.status === 'present' ? '預かり' : schedule.status === 'scheduled' ? '予定' : schedule.status}
                                   </span>
                                 </div>
                               </div>
@@ -594,6 +603,83 @@ export default async function DashboardPage({
         {/* ===== CHILDREN ===== */}
         {activeTab === 'children' && (
           <div className="space-y-6 pb-12 w-full max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+            {/* 施設・学校（預かり所）マスタ管理 */}
+            <div className="glass border border-white/20 dark:border-white/10 rounded-3xl p-6">
+              <details className="group bg-orange-500/10 border border-orange-500/20 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex items-center justify-between cursor-pointer p-4 font-bold text-orange-600 dark:text-orange-400">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    預かり先・施設マスタの連携管理
+                  </div>
+                  <span className="text-xs opacity-60">登録 {typedFacilities.length}件</span>
+                </summary>
+                <div className="p-5 pt-0 border-t border-orange-500/10 bg-background/50 space-y-6 mt-4">
+                  {/* 新規施設登録 */}
+                  <form action={upsertFacility} className="bg-white/50 dark:bg-black/20 p-4 border border-orange-200/50 dark:border-orange-900/50 rounded-xl shadow-sm space-y-3">
+                    <h3 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">新規登録</h3>
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="flex-1">
+                        <input type="text" name="name" required placeholder="施設・学校名 (例: 第一小学校)" className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none" />
+                      </div>
+                      <div className="flex-1 md:flex-[2]">
+                        <input type="text" name="address" placeholder="住所 (送迎ナビで開く用)" className="w-full bg-background border border-border/50 text-sm px-4 py-2 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none" />
+                      </div>
+                      <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl transition-colors shadow-sm">
+                        マスタ登録
+                      </button>
+                    </div>
+                  </form>
+                  
+                  {/* 登録済み施設一覧 */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">登録済み施設一覧</h3>
+                    {typedFacilities.length === 0 ? (
+                      <p className="text-sm text-muted-foreground p-3">登録されていません。</p>
+                    ) : (
+                      typedFacilities.map(f => (
+                        <AutoCloseDetails key={f.id} className="bg-white/70 dark:bg-black/30 border border-orange-100 dark:border-orange-900/30 rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden"
+                          summaryClassName="px-4 py-2.5 flex items-center justify-between text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                          summaryContent={<>
+                            <div className="font-bold flex items-center gap-2">
+                              <Building className="w-4 h-4 text-orange-400" /> {f.name}
+                            </div>
+                            <span className="text-xs text-muted-foreground mr-4 truncate max-w-[200px]">{f.address}</span>
+                          </>}
+                        >
+                          <div className="p-4 border-t border-orange-200/50 dark:border-orange-900/50 space-y-3">
+                            <form action={upsertFacility} className="flex flex-col md:flex-row gap-3">
+                              <input type="hidden" name="id" value={f.id} />
+                              <div className="flex-1">
+                                <label className="block text-[10px] text-muted-foreground uppercase mb-1">名称</label>
+                                <input type="text" name="name" defaultValue={f.name} required className="w-full bg-background border border-border/50 text-sm px-3 py-1.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                              </div>
+                              <div className="flex-1 md:flex-[2]">
+                                <label className="block text-[10px] text-muted-foreground uppercase mb-1">住所</label>
+                                <input type="text" name="address" defaultValue={f.address || ''} className="w-full bg-background border border-border/50 text-sm px-3 py-1.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                              </div>
+                              <div className="flex items-end">
+                                <button type="submit" className="bg-orange-500/20 text-orange-600 dark:text-orange-400 hover:bg-orange-500/30 font-bold px-4 py-1.5 rounded-lg transition-colors text-sm">保存</button>
+                              </div>
+                            </form>
+                            <form action={deleteFacility} className="flex justify-end pt-2">
+                              <input type="hidden" name="facilityId" value={f.id} />
+                              <ConfirmButton
+                                message={`${f.name} を削除しますか？ (紐付けられた児童の施設情報もリセットされます)`}
+                                className="text-[10px] font-bold text-red-500 hover:bg-red-500/10 px-2 py-1 rounded transition-colors flex items-center gap-1.5"
+                              >
+                                <Trash2 className="w-3 h-3 inline"/>削除
+                              </ConfirmButton>
+                            </form>
+                          </div>
+                        </AutoCloseDetails>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </details>
+            </div>
+
             <div className="glass border border-white/20 dark:border-white/10 rounded-3xl p-6">
               {/* 新規登録フォーム */}
               <details className="mb-6 group bg-primary/10 border border-primary/20 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
