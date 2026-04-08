@@ -29,31 +29,29 @@
     --radius: 1rem;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      /* Sleek dark mode with subtle teal tint */
-      --background: 180 20% 8%;
-      --foreground: 175 20% 96%;
-      --card: 180 20% 10%;
-      --card-foreground: 175 20% 96%;
+  .dark {
+    /* Sleek dark mode with subtle teal tint */
+    --background: 180 20% 8%;
+    --foreground: 175 20% 96%;
+    --card: 180 20% 10%;
+    --card-foreground: 175 20% 96%;
 
-      /* Primary: Soft Teal slightly darkened for dark mode */
-      --primary: 175 50% 40%;
-      --primary-foreground: 0 0% 100%;
+    /* Primary: Soft Teal slightly darkened for dark mode */
+    --primary: 175 50% 40%;
+    --primary-foreground: 0 0% 100%;
 
-      /* Secondary: Deep teal moss */
-      --secondary: 180 30% 16%;
-      --secondary-foreground: 175 20% 96%;
+    /* Secondary: Deep teal moss */
+    --secondary: 180 30% 16%;
+    --secondary-foreground: 175 20% 96%;
 
-      /* Accent: Deep Cyan */
-      --accent: 190 50% 45%;
-      --accent-foreground: 0 0% 100%;
+    /* Accent: Deep Cyan */
+    --accent: 190 50% 45%;
+    --accent-foreground: 0 0% 100%;
 
-      --muted: 180 20% 16%;
-      --muted-foreground: 180 15% 65%;
-      
-      --border: 180 20% 16%;
-    }
+    --muted: 180 20% 16%;
+    --muted-foreground: 180 15% 65%;
+    
+    --border: 180 20% 16%;
   }
 }
 
