@@ -469,11 +469,17 @@ export default async function DashboardPage({
                                 </div>
                                 <div>
                                   <span className="font-bold text-sm">{child.last_name} {child.first_name}</span>
+<<<<<<< HEAD
                                   {schedule.status === 'cancelled' && (
                                     <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold bg-red-500/20 text-red-400">
                                       キャンセル
                                     </span>
                                   )}
+=======
+                                  <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold ${schedule.status === 'cancelled' ? 'bg-red-500/20 text-red-400' : 'bg-teal-500/15 text-teal-500 dark:text-teal-400'}`}>
+                                    {schedule.status === 'cancelled' ? 'キャンセル' : '預かり'}
+                                  </span>
+>>>>>>> dbdcbf10a689929335894c7e66d15e548da76991
                                 </div>
                               </div>
 
