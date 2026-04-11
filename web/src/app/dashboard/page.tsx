@@ -7,14 +7,8 @@ import { AutoCloseDetails } from '@/app/components/AutoCloseDetails'
 import { ConfirmButton } from '@/app/components/ConfirmButton'
 
 // 時刻フォーマット用のヘルパー関数
-function formatTime(isoString: string | null) {
-  if (!isoString) return '--:--'
-  const date = new Date(isoString)
-  return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }).format(date)
-}
-
-function extractTime(isoString: string | null) {
-  if (!isoString) return ''
+function formatTime(isoString: string | null, fallback = '--:--') {
+  if (!isoString) return fallback
   const date = new Date(isoString)
   return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }).format(date)
 }
@@ -295,14 +289,14 @@ export default async function DashboardPage({
                             )}
                           </h2>
                           {/* スタッフ共有事項の表示と編集 */}
-                          {(child.notes || child.medical_notes) && (
+                          {child.notes && (
                             <div className="mt-2 w-full max-w-md">
                               <AutoCloseDetails
                                 className="group [&_summary::-webkit-details-marker]:hidden"
                                 summaryClassName="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-100/50 dark:bg-orange-950/30 px-3 py-1.5 rounded-lg border border-orange-200/50 dark:border-orange-900/50 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors"
                                 summaryContent={<>
                                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                  <span className="leading-snug truncate max-w-[200px]">{child.notes || child.medical_notes}</span>
+                                  <span className="leading-snug truncate max-w-[200px]">{child.notes}</span>
                                   <span className="text-[10px] ml-auto uppercase tracking-wider opacity-60">Edit</span>
                                 </>}
                               >
@@ -311,7 +305,7 @@ export default async function DashboardPage({
                                     <input type="hidden" name="childId" value={child.id} />
                                     <textarea
                                       name="notes"
-                                      defaultValue={child.notes || child.medical_notes || ''}
+                                      defaultValue={child.notes || ''}
                                       placeholder="スタッフ共有事項"
                                       className="w-full text-sm p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500 min-h-[60px]"
                                     />
@@ -398,14 +392,14 @@ export default async function DashboardPage({
                             <input type="hidden" name="scheduleId" value={schedule.id} />
                             <input type="hidden" name="fieldName" value="clock_in" />
                             <span className="text-xs font-semibold uppercase w-8">到着</span>
-                            <input type="time" name="timeValue" defaultValue={extractTime(schedule.clock_in)} className="bg-black/5 dark:bg-white/5 border border-border/50 text-foreground rounded flex-1 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none" />
+                            <input type="time" name="timeValue" defaultValue={formatTime(schedule.clock_in, '')} className="bg-black/5 dark:bg-white/5 border border-border/50 text-foreground rounded flex-1 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none" />
                             <button type="submit" className="text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg transition-colors">変更を保存</button>
                           </form>
                           <form action={updateScheduleTime} className="flex items-center gap-3">
                             <input type="hidden" name="scheduleId" value={schedule.id} />
                             <input type="hidden" name="fieldName" value="clock_out" />
                             <span className="text-xs font-semibold uppercase w-8">退出</span>
-                            <input type="time" name="timeValue" defaultValue={extractTime(schedule.clock_out)} className="bg-black/5 dark:bg-white/5 border border-border/50 text-foreground rounded flex-1 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none" />
+                            <input type="time" name="timeValue" defaultValue={formatTime(schedule.clock_out, '')} className="bg-black/5 dark:bg-white/5 border border-border/50 text-foreground rounded flex-1 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none" />
                             <button type="submit" className="text-xs font-bold bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg transition-colors">変更を保存</button>
                           </form>
                           {/* データ削除は管理者のみ */}
@@ -485,14 +479,14 @@ export default async function DashboardPage({
                                       <input type="hidden" name="scheduleId" value={schedule.id} />
                                       <input type="hidden" name="fieldName" value="clock_in" />
                                       <span className="text-[10px] font-semibold text-muted-foreground uppercase">到着</span>
-                                      <input type="time" name="timeValue" defaultValue={extractTime(schedule.clock_in)} className="bg-transparent border border-border/50 text-foreground rounded-lg px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary w-[80px]" />
+                                      <input type="time" name="timeValue" defaultValue={formatTime(schedule.clock_in, '')} className="bg-transparent border border-border/50 text-foreground rounded-lg px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary w-[80px]" />
                                       <button type="submit" className="text-[10px] font-bold bg-primary/20 text-primary hover:bg-primary/30 px-1.5 py-0.5 rounded transition-colors">更新</button>
                                     </form>
                                     <form action={updateScheduleTime} className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-xl">
                                       <input type="hidden" name="scheduleId" value={schedule.id} />
                                       <input type="hidden" name="fieldName" value="clock_out" />
                                       <span className="text-[10px] font-semibold text-muted-foreground uppercase">退出</span>
-                                      <input type="time" name="timeValue" defaultValue={extractTime(schedule.clock_out)} className="bg-transparent border border-border/50 text-foreground rounded-lg px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary w-[80px]" />
+                                      <input type="time" name="timeValue" defaultValue={formatTime(schedule.clock_out, '')} className="bg-transparent border border-border/50 text-foreground rounded-lg px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary w-[80px]" />
                                       <button type="submit" className="text-[10px] font-bold bg-primary/20 text-primary hover:bg-primary/30 px-1.5 py-0.5 rounded transition-colors">更新</button>
                                     </form>
                                     <div className="flex gap-1">

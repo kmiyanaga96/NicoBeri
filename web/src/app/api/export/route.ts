@@ -6,6 +6,15 @@ import fs from 'fs'
 
 const DAY_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土'];
 
+// ISO文字列を日本時間の HH:mm に変換
+function formatJST(isoString: string): string {
+  return new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tokyo',
+  }).format(new Date(isoString))
+}
+
 // (実動時間 - 30分) を基準に1時間単位で切り上げ算定する
 function calcBilledHours(clockInIso: string, clockOutIso: string): number {
   const inDate = new Date(clockInIso)
@@ -148,10 +157,8 @@ export async function GET(request: Request) {
         mainRow.getCell('F').value = dow
         
         if (rec.clock_in && rec.clock_out) {
-          const inD = new Date(rec.clock_in)
-          const outD = new Date(rec.clock_out)
-          mainRow.getCell('J').value = `${String(inD.getHours()).padStart(2,'0')}:${String(inD.getMinutes()).padStart(2,'0')}`
-          mainRow.getCell('P').value = `${String(outD.getHours()).padStart(2,'0')}:${String(outD.getMinutes()).padStart(2,'0')}`
+          mainRow.getCell('J').value = formatJST(rec.clock_in)
+          mainRow.getCell('P').value = formatJST(rec.clock_out)
           mainRow.getCell('V').value = calcBilledHours(rec.clock_in, rec.clock_out)
         } else {
           // 打刻漏れ
