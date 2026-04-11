@@ -108,15 +108,12 @@ async function requireAdmin(supabase: any, userId: string): Promise<boolean> {
   return profile?.role === 'admin'
 }
 
-// 管理者用: 打刻時刻の修正
+// 打刻時刻の修正（スタッフは当日のみ、管理者は全日）
 export async function updateScheduleTime(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  const isAdmin = await requireAdmin(supabase, user.id)
-  // staff権限も「今日」の予定なら打刻修正可能にするためブロックを解除
-  // (過去日に関してはDBのRLS制御によって保護される想定)
   const scheduleId = formData.get('scheduleId') as string
   const fieldName = formData.get('fieldName') as 'clock_in' | 'clock_out'
   const timeValue = formData.get('timeValue') as string
@@ -130,11 +127,13 @@ export async function updateScheduleTime(formData: FormData) {
     .single()
   if (!schedule) return
 
+  // 権限チェック: スタッフは当日の予定のみ修正可能、管理者は制限なし
+  const isAdmin = await requireAdmin(supabase, user.id)
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
+  if (!isAdmin && schedule.date !== todayStr) return
+
   let isoDateTime = null
   if (timeValue) {
-    // 確実な日本時間として解釈してISOに落とし込む (+09:00付与)
-    // schedule.date = YYYY-MM-DD
-    // timeValue = HH:mm
     isoDateTime = new Date(`${schedule.date}T${timeValue}:00+09:00`).toISOString()
   }
 
@@ -175,9 +174,12 @@ export async function updateScheduleTransport(formData: FormData) {
   revalidatePath('/dashboard')
 }
 
-// 児童情報の追加・更新
+// 児童情報の追加・更新（認証必須）
 export async function upsertChild(formData: FormData) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
   const id = formData.get('id') as string
   const first_name = formData.get('first_name') as string
   const last_name = formData.get('last_name') as string
@@ -224,11 +226,14 @@ export async function upsertChild(formData: FormData) {
   revalidatePath('/dashboard')
 }
 
-// 児童の削除（論理削除ではなく物理削除）
+// 児童の削除（管理者のみ・物理削除）
 export async function deleteChild(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
+
+  const isAdmin = await requireAdmin(supabase, user.id)
+  if (!isAdmin) return
 
   const childId = formData.get('childId') as string
   if (!childId) return
@@ -284,11 +289,14 @@ export async function removeSchedule(formData: FormData) {
   revalidatePath('/dashboard')
 }
 
-// --- 施設（預かり所）の追加・更新 ---
+// --- 施設（預かり所）の追加・更新（管理者のみ） ---
 export async function upsertFacility(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
+
+  const isAdmin = await requireAdmin(supabase, user.id)
+  if (!isAdmin) return
 
   const id = formData.get('id') as string
   const name = formData.get('name') as string
@@ -310,11 +318,14 @@ export async function upsertFacility(formData: FormData) {
   revalidatePath('/dashboard')
 }
 
-// --- 施設の削除 ---
+// --- 施設の削除（管理者のみ） ---
 export async function deleteFacility(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
+
+  const isAdmin = await requireAdmin(supabase, user.id)
+  if (!isAdmin) return
 
   const facilityId = formData.get('facilityId') as string
   if (!facilityId) return
