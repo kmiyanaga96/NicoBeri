@@ -132,11 +132,10 @@ export async function updateScheduleTime(formData: FormData) {
 
   let isoDateTime = null
   if (timeValue) {
-    const [hh, mm] = timeValue.split(':')
-    const tDate = new Date(`${schedule.date}T00:00:00`)
-    tDate.setHours(parseInt(hh, 10))
-    tDate.setMinutes(parseInt(mm, 10))
-    isoDateTime = tDate.toISOString()
+    // 確実な日本時間として解釈してISOに落とし込む (+09:00付与)
+    // schedule.date = YYYY-MM-DD
+    // timeValue = HH:mm
+    isoDateTime = new Date(`${schedule.date}T${timeValue}:00+09:00`).toISOString()
   }
 
   await supabase
