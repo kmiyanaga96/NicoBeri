@@ -1,7 +1,7 @@
-import { CalendarDays, History, CarTaxiFront, Plus } from 'lucide-react'
-import { updateScheduleTime, updateScheduleTransport, addSchedule } from '../actions'
+import { CalendarDays, History, CarTaxiFront, Plus, Trash2 } from 'lucide-react'
+import { updateScheduleTime, updateScheduleTransport, addSchedule, removeSchedule } from '../actions'
 import { formatTime } from '@/utils/format'
-
+import { ConfirmButton } from '@/app/components/ConfirmButton'
 export function HistoryView({ historyByDate, typedChildren }: { historyByDate: Record<string, any[]>; typedChildren: any[] }) {
   return (
     <div className="space-y-6 pb-12">
@@ -76,6 +76,17 @@ export function HistoryView({ historyByDate, typedChildren }: { historyByDate: R
                               <button type="submit" className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all border ${schedule.dropoff ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' : 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'}`}>
                                 <CarTaxiFront className={`w-3 h-3 ${schedule.dropoff ? 'text-indigo-500' : 'opacity-50'}`} /> 送り
                               </button>
+                            </form>
+                          </div>
+                          <div className="pl-2 border-l border-white/10 ml-1">
+                            <form action={removeSchedule}>
+                              <input type="hidden" name="scheduleId" value={schedule.id} />
+                              <ConfirmButton
+                                message={`${child.last_name} ${child.first_name} の予定・実績を削除しますか？\nこの操作は取り消せません。`}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all text-red-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30"
+                              >
+                                <Trash2 className="w-3 h-3" /> 消去
+                              </ConfirmButton>
                             </form>
                           </div>
                         </div>
